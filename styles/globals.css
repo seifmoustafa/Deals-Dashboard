@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142 76% 36%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142 76% 36%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Typography utility classes */
+@layer utilities {
+  /* Headings */
+  .heading-h1 {
+    @apply text-[46px] font-bold;
+  }
+  .heading-h2-bold {
+    @apply text-[32px] font-bold;
+  }
+  .heading-h2-semibold {
+    @apply text-[32px] font-semibold;
+  }
+  .heading-h3 {
+    @apply text-[24px] font-bold;
+  }
+  .heading-h4 {
+    @apply text-[23px] font-normal;
+  }
+  .heading-h5 {
+    @apply text-[22px] font-bold;
+  }
+  .heading-h6-bold {
+    @apply text-[20px] font-bold;
+  }
+  .heading-h6-regular {
+    @apply text-[20px] font-normal;
+  }
+
+  /* Paragraphs */
+  .paragraph-p1-bold {
+    @apply text-[18px] font-bold;
+  }
+  .paragraph-p2-bold {
+    @apply text-[16px] font-bold;
+  }
+  .paragraph-p2-regular {
+    @apply text-[16px] font-normal;
+  }
+  .paragraph-p3 {
+    @apply text-[15px] font-bold;
+  }
+  .paragraph-p4-bold {
+    @apply text-[14px] font-bold;
+  }
+  .paragraph-p4-semibold {
+    @apply text-[14px] font-semibold;
+  }
+  .paragraph-p4-regular {
+    @apply text-[14px] font-normal;
+  }
+  .paragraph-p5-semibold {
+    @apply text-[13px] font-semibold;
+  }
+  .paragraph-p5-regular {
+    @apply text-[13px] font-normal;
+  }
+
+  /* Captions */
+  .caption-semibold {
+    @apply text-[12px] font-semibold;
+  }
+  .caption-medium {
+    @apply text-[12px] font-medium;
+  }
+  .caption-regular {
+    @apply text-[12px] font-normal;
+  }
+}
+
+/* RTL Support */
+[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* Country dropdown styles */
+.country-dropdown-container {
+  z-index: 9999;
+}
+
+/* Improve the search input styling */
+.country-dropdown-container .search-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Add a subtle hover effect for dropdown items */
+.country-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.country-dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.country-dropdown-item.selected {
+  background-color: rgba(0, 0, 0, 0.075);
+  font-weight: 500;
+}
+
+/* Flag image styles */
+.country-flag {
+  width: 24px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 2px;
+  margin-right: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+[dir="rtl"] .country-flag {
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+/* Custom animation keyframes */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Login image hover styles */
+.group:hover .animate-float {
+  animation-play-state: paused;
+}

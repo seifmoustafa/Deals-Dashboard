@@ -1,0 +1,338 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, Plus } from "lucide-react"
+import { storeService, couponService } from "@/infrastructure/di/container"
+import type { Store } from "@/domain/entities/store"
+import { useRouter, useParams } from "next/navigation"
+import type { Coupon, CreateCouponDto } from "@/domain/entities/coupon"
+import { CouponFormDialog } from "@/core/components/coupons/coupon-form-dialog"
+import { DeleteCouponDialog } from "@/core/components/coupons/delete-coupon-dialog"
+import { CouponCard } from "@/core/components/coupons/coupon-card"
+import { showToast } from "@/core/components/ui/animated-toast"
+import Image from "next/image"
+
+export default function EditOfferPage() {
+  const router = useRouter()
+  const params = useParams()
+  const storeId = Array.isArray(params.storeId) ? params.storeId[0] : params.storeId
+
+  // Add validation to ensure storeId exists
+  useEffect(() => {
+    if (!storeId || storeId === "undefined") {
+      console.error("Invalid store ID:", storeId)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: "Invalid store ID. Redirecting to cashback page.",
+      })
+      router.push("/dashboard/cashback")
+      return
+    }
+
+    loadStoreData()
+    loadCouponsByStore()
+  }, [storeId, router])
+
+  const [store, setStore] = useState<Store | null>(null)
+  const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [isLoadingStore, setIsLoadingStore] = useState(true)
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false)
+
+  // Dialog states
+  const [showCouponDialog, setShowCouponDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null)
+  const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const loadStoreData = async () => {
+    try {
+      setIsLoadingStore(true)
+      console.log("Loading store with ID:", storeId) // Debug log
+
+      // Try different ID field names that might be used
+      let storeData
+      try {
+        storeData = await storeService.getStoreById(storeId)
+      } catch (error) {
+        console.error("Failed with storeId:", storeId, error)
+        // If the first attempt fails, the error will be caught by the outer try-catch
+        throw error
+      }
+
+      console.log("Loaded store data:", storeData) // Debug log
+      setStore(storeData)
+    } catch (error) {
+      console.error("Failed to load store:", error)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to load store data. Please try again.",
+      })
+      // Redirect back to cashback page if store not found
+      router.push("/dashboard/cashback")
+    } finally {
+      setIsLoadingStore(false)
+    }
+  }
+
+  const loadCouponsByStore = async () => {
+    try {
+      setIsLoadingCoupons(true)
+      const response = await couponService.getCouponsByStoreId(storeId, 1, 100)
+      setCoupons(response.data)
+    } catch (error) {
+      console.error("Failed to load coupons:", error)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to load coupons. Please try again.",
+      })
+    } finally {
+      setIsLoadingCoupons(false)
+    }
+  }
+
+  const handleAddCoupon = () => {
+    setDialogMode("add")
+    setEditingCoupon(null)
+    setShowCouponDialog(true)
+  }
+
+  const handleEditCoupon = async (coupon: Coupon) => {
+    try {
+      // Fetch the full coupon details
+      const fullCoupon = await couponService.getCouponById(coupon._id)
+      setDialogMode("edit")
+      setEditingCoupon(fullCoupon)
+      setShowCouponDialog(true)
+    } catch (error) {
+      console.error("Failed to load coupon details:", error)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to load coupon details. Please try again.",
+      })
+    }
+  }
+
+  const handleDeleteCoupon = (coupon: Coupon) => {
+    setDeletingCoupon(coupon)
+    setShowDeleteDialog(true)
+  }
+
+  const handleSaveCoupon = async (couponData: CreateCouponDto) => {
+    try {
+      setIsProcessing(true)
+      console.log("Saving coupon with mode:", dialogMode, "Data:", couponData)
+
+      if (dialogMode === "add") {
+        const newCoupon = await couponService.createCoupon(couponData)
+        setCoupons((prev) => [...prev, newCoupon])
+        showToast({
+          type: "success",
+          title: "Success",
+          message: "Coupon added successfully",
+        })
+      } else if (dialogMode === "edit" && editingCoupon) {
+        console.log("Updating coupon with ID:", editingCoupon._id)
+        const updatedCoupon = await couponService.updateCoupon(editingCoupon._id, couponData)
+        setCoupons((prev) => prev.map((c) => (c._id === editingCoupon._id ? updatedCoupon : c)))
+        showToast({
+          type: "success",
+          title: "Success",
+          message: "Coupon updated successfully",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to save coupon:", error)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: `Failed to ${dialogMode === "add" ? "add" : "update"} coupon. Please try again.`,
+      })
+      // Don't close the dialog on error by not calling setShowCouponDialog(false)
+      throw error // Re-throw so the form dialog knows there was an error
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingCoupon) return
+
+    try {
+      setIsProcessing(true)
+      await couponService.deleteCoupon(deletingCoupon._id)
+      setCoupons((prev) => prev.filter((c) => c._id !== deletingCoupon._id))
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Coupon deleted successfully",
+      })
+    } catch (error) {
+      console.error("Failed to delete coupon:", error)
+      showToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to delete coupon. Please try again.",
+      })
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  if (isLoadingStore) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!store) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-red-600">Store not found</p>
+          <Button onClick={() => router.push("/dashboard/cashback")} className="mt-4">
+            Back to Cashback
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center space-x-2 text-sm text-gray-600">
+        <span>Cashback & Coupon</span>
+        <span>»</span>
+        <span>{store.title}</span>
+      </div>
+
+      {/* Store Info */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-start space-x-4">
+          <div className="h-16 w-16 relative flex-shrink-0">
+            <Image
+              src={store.image?.url || "/placeholder.svg"}
+              alt={store.title || "Store"}
+              fill
+              className="object-contain rounded-lg"
+            />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">{store.title}</h1>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Lorem ipsum dolor sit amet consectetur. Lorem vestibulum curabitur convallis purus diam dictum eu
+              venenatis. Non ac velit ut faucibus scelerisque tincidunt at in.
+            </p>
+          </div>
+          <Button onClick={() => router.push("/dashboard/cashback")} variant="outline" className="text-gray-600">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="border-b border-gray-200 px-6">
+          <div className="flex">
+            <button className="px-0 py-3 text-sm font-medium text-green-600 border-b-2 border-green-600">
+              <span className="flex items-center">
+                <svg
+                  width="21"
+                  height="22"
+                  viewBox="0 0 21 22"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5 mr-2"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M15.5994 4.2789L15.0175 2.47047C14.835 1.90318 14.1999 1.62043 13.6562 1.86438L11.9229 2.64205C11.0916 3.01503 10.1359 2.99 9.32522 2.57402L7.63502 1.70671C7.10482 1.43464 6.45583 1.68376 6.24387 2.24072L5.56815 4.01623C5.24407 4.86778 4.55055 5.52591 3.6832 5.80498L1.87476 6.38685C1.30747 6.56937 1.02473 7.20443 1.26868 7.74814L2.04634 9.48142C2.41932 10.3127 2.3943 11.2685 1.97832 12.0791L1.11101 13.7693C0.838938 14.2995 1.08806 14.9485 1.64502 15.1605L3.42053 15.8362C4.27208 16.1603 4.9302 16.8538 5.20927 17.7211L5.79114 19.5296C5.97367 20.0969 6.60873 20.3796 7.15244 20.1357L8.88572 19.358C9.71702 18.985 10.6728 19.01 11.4834 19.426L13.1736 20.2933C13.7038 20.5654 14.3528 20.3163 14.5648 19.7593L15.2405 17.9838C15.5646 17.1323 16.2581 16.4741 17.1254 16.1951L18.9339 15.6132C19.5012 15.4307 19.7839 14.7956 19.54 14.2519L18.7623 12.5186C18.3893 11.6873 18.4143 10.7316 18.8303 9.92092L19.6976 8.23072C19.9697 7.70052 19.7206 7.05154 19.1636 6.83957L17.3881 6.16385C16.5366 5.83977 15.8784 5.14625 15.5994 4.2789ZM15.9694 2.16418C15.6044 1.0296 14.3343 0.46411 13.2468 0.952004L11.5136 1.72967C10.9594 1.97833 10.3222 1.96164 9.78176 1.68432L8.09156 0.817008C7.03116 0.272871 5.7332 0.771114 5.30926 1.88503L4.63354 3.66054C4.41749 4.22824 3.95514 4.66699 3.37691 4.85304L1.56847 5.43491C0.433895 5.79996 -0.131593 7.07007 0.3563 8.1575L1.13397 9.89077C1.38262 10.445 1.36594 11.0821 1.08862 11.6226L0.221305 13.3128C-0.322832 14.3732 0.175411 15.6711 1.28933 16.0951L3.06484 16.7708C3.63254 16.9868 4.07129 17.4492 4.25734 18.0274L4.83921 19.8359C5.20426 20.9704 6.47437 21.5359 7.56179 21.048L9.29507 20.2704C9.84927 20.0217 10.4864 20.0384 11.0269 20.3157L12.7171 21.183C13.7775 21.7272 15.0754 21.2289 15.4994 20.115L16.1751 18.3395C16.3911 17.7718 16.8535 17.333 17.4317 17.147L19.2402 16.5651C20.3747 16.2001 20.9402 14.93 20.4523 13.8425L19.6747 12.1093C19.426 11.5551 19.4427 10.9179 19.72 10.3775L20.5873 8.68726C21.1315 7.62686 20.6332 6.3289 19.5193 5.90497L17.7438 5.22925C17.1761 5.01319 16.7373 4.55085 16.5513 3.97262L15.9694 2.16418Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M7.51497 15.5723C7.47485 15.6351 7.45235 15.7075 7.44982 15.782C7.44729 15.8566 7.46489 15.9305 7.50077 15.996C7.53666 16.0615 7.58951 16.116 7.65378 16.154C7.71804 16.192 7.79135 16.212 7.86601 16.2119C7.93609 16.212 8.00505 16.1944 8.06652 16.1608C8.12746 16.1274 8.17909 16.0793 8.21671 16.0209L8.21768 16.0194L14.051 6.85276C14.1061 6.75976 14.1231 6.64863 14.0981 6.54346C14.073 6.43816 14.0079 6.34676 13.9166 6.2886C13.8253 6.23044 13.715 6.2101 13.6089 6.23187C13.5029 6.25365 13.4095 6.31583 13.3485 6.40526L7.51497 15.5723ZM5.78268 7.46193C5.78268 8.61026 6.71768 9.54526 7.86601 9.54526C9.01434 9.54526 9.94934 8.61026 9.94934 7.46193C9.94934 6.31359 9.01434 5.37859 7.86601 5.37859C6.71768 5.37859 5.78268 6.31359 5.78268 7.46193ZM6.61601 7.46193C6.61601 6.77276 7.17684 6.21193 7.86601 6.21193C8.55518 6.21193 9.11601 6.77276 9.11601 7.46193C9.11601 8.15109 8.55518 8.71193 7.86601 8.71193C7.17684 8.71193 6.61601 8.15109 6.61601 7.46193ZM11.616 14.9619C11.616 16.1103 12.551 17.0453 13.6993 17.0453C14.8477 17.0453 15.7827 16.1103 15.7827 14.9619C15.7827 13.8136 14.8477 12.8786 13.6993 12.8786C12.551 12.8786 11.616 13.8136 11.616 14.9619ZM12.4493 14.9619C12.4493 14.2728 13.0102 13.7119 13.6993 13.7119C14.3885 13.7119 14.9493 14.2728 14.9493 14.9619C14.9493 15.6511 14.3885 16.2119 13.6993 16.2119C13.0102 16.2119 12.4493 15.6511 12.4493 14.9619Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                Coupon
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Coupon Content */}
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <Button
+              onClick={handleAddCoupon}
+              className="bg-white hover:bg-gray-50 text-green-600 border border-green-600 rounded-full px-4 py-2"
+              variant="outline"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add coupon
+            </Button>
+          </div>
+
+          {isLoadingCoupons ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {coupons.map((coupon) => (
+                <CouponCard
+                  key={coupon._id}
+                  coupon={coupon}
+                  storeName={store.title || ""}
+                  categoryName={store.category?.title || ""}
+                  onEdit={handleEditCoupon}
+                  onDelete={handleDeleteCoupon}
+                />
+              ))}
+
+              {coupons.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No coupons found. Add your first coupon to get started.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <CouponFormDialog
+        open={showCouponDialog}
+        onClose={() => setShowCouponDialog(false)}
+        onSave={handleSaveCoupon}
+        storeId={storeId}
+        isLoading={isProcessing}
+        editCoupon={editingCoupon}
+        mode={dialogMode}
+      />
+
+      <DeleteCouponDialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        couponTitle={deletingCoupon?.title || ""}
+        isLoading={isProcessing}
+      />
+    </div>
+  )
+}
