@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/core/components/theme-provider"
 import { TranslationProvider } from "@/core/localization/translation-context"
 import { ToastContainer } from "@/core/components/ui/animated-toast"
 import { AuthModal } from "@/core/components/auth/auth-modal"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: "Deals Admin Dashboard",
@@ -25,6 +27,8 @@ export default function RootLayout({
         </ThemeProvider>
         <ToastContainer />
         <AuthModal />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
