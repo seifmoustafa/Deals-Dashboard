@@ -13,6 +13,7 @@ export interface Coupon {
   discount_type: DiscountType
   discount: number
   cashback: number
+  country: string
   minimum_purchase: {
     currency: string
   }
@@ -45,6 +46,7 @@ export interface CreateCouponDto {
   discount_type: DiscountType
   discount?: number
   cashback?: number
+  country: string
   expiry_date: string
 }
 

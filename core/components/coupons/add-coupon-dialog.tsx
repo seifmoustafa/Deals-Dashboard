@@ -9,14 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react"
 import { format } from "date-fns"
-import type { DiscountType, CouponCreateDTO } from "@/domain/entities/coupon"
+import { cn } from "@/lib/utils"
+import { getCountryOptions } from "@/core/utils/countries"
+import type { DiscountType, CreateCouponDto } from "@/domain/entities/coupon"
 
 interface AddCouponDialogProps {
   open: boolean
   onClose: () => void
-  onSave: (coupon: CouponCreateDTO) => Promise<void>
+  onSave: (coupon: CreateCouponDto) => Promise<void>
   storeId: string
   isLoading?: boolean
 }
@@ -28,21 +30,25 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
     discount_type: "" as DiscountType,
     discount: 0,
     cashback: 0,
+    country: "",
     expiry_date: undefined as Date | undefined,
   })
+  const [openCountrySelect, setOpenCountrySelect] = useState(false)
+  const [countrySearchValue, setCountrySearchValue] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.code || !formData.title || !formData.discount_type || !formData.expiry_date) {
+    if (!formData.code || !formData.title || !formData.discount_type || !formData.country || !formData.expiry_date) {
       return
     }
 
-    const couponData: CouponCreateDTO = {
+    const couponData: CreateCouponDto = {
       code: formData.code,
       store: storeId,
       title: formData.title,
       discount_type: formData.discount_type,
+      country: formData.country,
       expiry_date: format(formData.expiry_date, "M/d/yyyy"),
     }
 
@@ -63,8 +69,11 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
       discount_type: "" as DiscountType,
       discount: 0,
       cashback: 0,
+      country: "",
       expiry_date: undefined,
     })
+    setCountrySearchValue("")
+    setOpenCountrySelect(false)
   }
 
   const handleClose = () => {
@@ -74,9 +83,18 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
       discount_type: "" as DiscountType,
       discount: 0,
       cashback: 0,
+      country: "",
       expiry_date: undefined,
     })
+    setCountrySearchValue("")
+    setOpenCountrySelect(false)
     onClose()
+  }
+
+  const handleCountrySelect = (country: string) => {
+    setFormData({ ...formData, country })
+    setCountrySearchValue("")
+    setOpenCountrySelect(false)
   }
 
   return (
@@ -104,6 +122,63 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
               placeholder="Enter coupon title"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <Popover open={openCountrySelect} onOpenChange={setOpenCountrySelect}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCountrySelect}
+                  className="w-full justify-between h-10 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                  disabled={isLoading}
+                >
+                  {formData.country || "Select country..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <div className="p-2">
+                  <Input
+                    placeholder="Search countries..."
+                    value={countrySearchValue}
+                    onChange={(e) => setCountrySearchValue(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="max-h-60 overflow-y-auto">
+                    {getCountryOptions()
+                      .filter((country) =>
+                        country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
+                      )
+                      .length === 0 ? (
+                      <div className="p-2 text-sm text-gray-500">No country found.</div>
+                    ) : (
+                      getCountryOptions()
+                        .filter((country) =>
+                          country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
+                        )
+                        .map((country) => (
+                          <div
+                            key={country.value}
+                            onClick={() => handleCountrySelect(country.value)}
+                            className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded-sm"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.country === country.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {country.label}
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
