@@ -29,8 +29,11 @@ export default function CategoryStoresPage() {
         const foundCategory = categories.data.find((cat: any) => cat.slug === slug || cat.id === slug)
 
         if (foundCategory) {
+          console.log(`✅ Found category:`, foundCategory)
+          console.log(`✅ Category ID: ${foundCategory.id}`)
           setCategory(foundCategory)
         } else {
+          console.log(`❌ Category not found for slug: ${slug}`)
           showToast({
             type: "error",
             title: "Error",
@@ -54,7 +57,7 @@ export default function CategoryStoresPage() {
     }
   }, [slug])
 
-  const handleAddStore = async (title: string, imageUrl: string, storeUrl: string, cashbackRate: number) => {
+  const handleAddStore = async (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => {
     if (!category) return
 
     try {
@@ -65,9 +68,8 @@ export default function CategoryStoresPage() {
         image: { url: imageUrl },
         store_url: storeUrl,
         category: category.id,
-        cashback: {
-          rate: cashbackRate,
-        },
+        description,
+        countries,
       })
 
       showToast({
@@ -109,7 +111,17 @@ export default function CategoryStoresPage() {
       </div>
 
       {/* Stores Table */}
-      <StoresTable categoryId={category?.id} categoryTitle={category?.title} refreshTrigger={refreshTrigger} />
+      {console.log(`🔍 Passing to StoresTable - categoryId: ${category?.id}, categoryTitle: ${category?.title}`)}
+      {category ? (
+        <StoresTable categoryId={category.id} categoryTitle={category.title} refreshTrigger={refreshTrigger} />
+      ) : (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading stores...</p>
+          </div>
+        </div>
+      )}
 
       {/* Add Store Dialog */}
       <StoreAddDialog

@@ -9,15 +9,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader, ImageIcon } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Check, ChevronsUpDown, X } from "lucide-react"
+import { getCountryOptions } from "@/core/utils/countries"
+import { cn } from "@/lib/utils"
 
 interface StoreEditDialogProps {
   open: boolean
   onClose: () => void
-  onSave: (title: string, imageUrl: string, storeUrl: string, cashbackRate: number) => void
+  onSave: (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => void
   initialTitle: string
   initialImageUrl: string
   initialStoreUrl: string
-  initialCashbackRate: number
+  initialDescription: string
+  initialCountries: string[]
   isLoading: boolean
 }
 
@@ -28,30 +34,46 @@ export function StoreEditDialog({
   initialTitle,
   initialImageUrl,
   initialStoreUrl,
-  initialCashbackRate,
+  initialDescription,
+  initialCountries,
   isLoading,
 }: StoreEditDialogProps) {
   const [title, setTitle] = useState(initialTitle)
   const [imageUrl, setImageUrl] = useState(initialImageUrl)
   const [storeUrl, setStoreUrl] = useState(initialStoreUrl)
-  const [cashbackRate, setCashbackRate] = useState(initialCashbackRate)
+  const [description, setDescription] = useState(initialDescription)
+  const [countries, setCountries] = useState<string[]>(initialCountries)
   const [isUploading, setIsUploading] = useState(false)
-  const [about, setAbout] = useState(
-    "Lorem ipsum dolor sit amet consectetur. Lorem vestibulum curabitur convallis purus diam dictum eu venenatis. Non ac velit ut faucibus scelerisque tincidunt at in.",
-  )
+  const [openCountrySelect, setOpenCountrySelect] = useState(false)
+  const [countrySearchValue, setCountrySearchValue] = useState("")
 
   useEffect(() => {
     if (open) {
       setTitle(initialTitle || "")
       setImageUrl(initialImageUrl || "")
       setStoreUrl(initialStoreUrl || "")
-      setCashbackRate(initialCashbackRate || 0)
+      setDescription(initialDescription || "")
+      setCountries(initialCountries || [])
+      setCountrySearchValue("")
+      setOpenCountrySelect(false)
     }
-  }, [open, initialTitle, initialImageUrl, initialStoreUrl, initialCashbackRate])
+  }, [open, initialTitle, initialImageUrl, initialStoreUrl, initialDescription, initialCountries])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(title, imageUrl, storeUrl, cashbackRate)
+    onSave(title, imageUrl, storeUrl, description, countries)
+  }
+
+  const handleCountrySelect = (country: string) => {
+    if (!countries.includes(country)) {
+      setCountries([...countries, country])
+    }
+    setCountrySearchValue("")
+    setOpenCountrySelect(false)
+  }
+
+  const handleCountryRemove = (countryToRemove: string) => {
+    setCountries(countries.filter(country => country !== countryToRemove))
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,17 +115,16 @@ export function StoreEditDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="about">About</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
-                id="about"
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter store description"
                 disabled={isLoading}
                 className="resize-none"
-                rows={4}
+                rows={3}
               />
-              <div className="text-xs text-right text-gray-500">{about.length}/150</div>
             </div>
 
             <div className="flex justify-center">
@@ -147,25 +168,97 @@ export function StoreEditDialog({
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="countries">Countries</Label>
+              <Popover open={openCountrySelect} onOpenChange={setOpenCountrySelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCountrySelect}
+                    className="w-full justify-between h-10 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                    disabled={isLoading}
+                  >
+                    {countries.length > 0 ? `${countries.length} countries selected` : "Select countries..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search countries..."
+                      value={countrySearchValue}
+                      onChange={(e) => setCountrySearchValue(e.target.value)}
+                      className="mb-2"
+                    />
+                    <div className="max-h-60 overflow-y-auto">
+                      {getCountryOptions()
+                        .filter((country) =>
+                          country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
+                        )
+                        .length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">No country found.</div>
+                      ) : (
+                        getCountryOptions()
+                          .filter((country) =>
+                            country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
+                          )
+                          .map((country) => {
+                            const isSelected = countries.includes(country.value)
+                            return (
+                              <div
+                                key={country.value}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    handleCountryRemove(country.value)
+                                  } else {
+                                    handleCountrySelect(country.value)
+                                  }
+                                }}
+                                className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded-sm"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {country.label}
+                              </div>
+                            )
+                          })
+                      )}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {countries.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {countries.map((country) => (
+                    <span
+                      key={country}
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
+                    >
+                      {country}
+                      <button
+                        type="button"
+                        onClick={() => handleCountryRemove(country)}
+                        className="ml-1 text-green-600 hover:text-green-800"
+                        disabled={isLoading}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="store-url">Store URL</Label>
               <Input
                 id="store-url"
                 value={storeUrl}
                 onChange={(e) => setStoreUrl(e.target.value)}
                 placeholder="Enter store URL"
-                disabled={isLoading}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="cashback-rate">Cashback Rate (%)</Label>
-              <Input
-                id="cashback-rate"
-                type="number"
-                min="0"
-                step="0.1"
-                value={cashbackRate}
-                onChange={(e) => setCashbackRate(Number.parseFloat(e.target.value) || 0)}
-                placeholder="Enter cashback rate"
                 disabled={isLoading}
               />
             </div>

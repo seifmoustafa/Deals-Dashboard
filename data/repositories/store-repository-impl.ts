@@ -39,6 +39,7 @@ export class StoreRepositoryImpl implements StoreRepository {
       search?: string
     },
   ): Promise<StoresResponse> {
+    // Use the specific endpoint for category filtering
     return this.apiClient.get<StoresResponse>(`/stores/stores-bycategoryId/${categoryId}`, params)
   }
 

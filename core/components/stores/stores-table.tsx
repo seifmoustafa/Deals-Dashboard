@@ -66,15 +66,26 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
         setIsLoading(true)
         let response: StoresResponse
 
+        console.log(`🔍 StoresTable - categoryId: ${categoryId}`)
+        console.log(`🔍 StoresTable - categoryId type: ${typeof categoryId}`)
+        console.log(`🔍 StoresTable - categoryId truthy: ${!!categoryId}`)
+
         // Always use getStoresByCategoryId when categoryId is provided
         if (categoryId) {
-          console.log(`Fetching stores for category ID: ${categoryId}`)
-          response = await storeService.getStoresByCategoryId(categoryId, {
+          const requestParams = {
+            ...params,
+            search: debouncedSearchTerm || undefined,
+          }
+          console.log(`🔍 Fetching stores for category ID: ${categoryId}`)
+          console.log(`📋 Request params:`, requestParams)
+          console.log(`🌐 Expected URL: /stores/stores-bycategoryId/${categoryId}?page=${requestParams.page}&limit=${requestParams.limit}&sortField=${requestParams.sortField}&sortOrder=${requestParams.sortOrder}`)
+          
+          response = await storeService.getStoresByCategoryId(categoryId, requestParams)
+        } else {
+          console.log("📋 Fetching all stores (no category filter) with params:", {
             ...params,
             search: debouncedSearchTerm || undefined,
           })
-        } else {
-          console.log("Fetching all stores (no category filter)")
           response = await storeService.getStores({
             ...params,
             search: debouncedSearchTerm || undefined,
@@ -115,7 +126,7 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
   }
 
   // Individual store actions
-  const handleEditStoreSave = async (title: string, imageUrl: string, storeUrl: string, cashbackRate: number) => {
+  const handleEditStoreSave = async (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => {
     if (!storeToEdit) return
 
     try {
@@ -124,7 +135,8 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
         title,
         image: { url: imageUrl },
         store_url: storeUrl,
-        cashback: { rate: cashbackRate },
+        description,
+        countries,
       })
 
       setStores((prevStores) => prevStores.map((store) => (store.id === storeToEdit.id ? updatedStore : store)))
@@ -336,10 +348,22 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-medium text-gray-900 mb-2">{store.title}</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      Lorem ipsum dolor sit amet consectetur. Lorem vestibulum curabitur convallis purus diam dictum eu
-                      venenatis. Non ac velit ut faucibus scelerisque tincidunt at in.
+                    <p className="text-sm text-gray-600 leading-relaxed mb-2">
+                      {store.description || "No description available"}
                     </p>
+                    {/* Countries */}
+                    {store.countries && store.countries.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {store.countries.map((country, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                          >
+                            {country}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {/* Status indicator */}
                     <div className="flex items-center mt-2">
                       <span
@@ -464,7 +488,8 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
           initialTitle={storeToEdit.title}
           initialImageUrl={storeToEdit.image?.url || ""}
           initialStoreUrl={storeToEdit.store_url || ""}
-          initialCashbackRate={storeToEdit.cashback?.rate || 0}
+          initialDescription={storeToEdit.description || ""}
+          initialCountries={storeToEdit.countries || []}
           isLoading={isEditing}
         />
       )}

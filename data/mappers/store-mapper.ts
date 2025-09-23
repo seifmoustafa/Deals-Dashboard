@@ -7,12 +7,13 @@ export class StoreMapper {
       title: dto.title,
       image: dto.image,
       store_url: dto.store_url,
-      category: {
+      category: dto.category ? {
         id: dto.category._id || dto.category.id,
         title: dto.category.title,
         slug: dto.category.slug,
-      },
-      cashback: dto.cashback,
+      } : null,
+      description: dto.description || "",
+      countries: dto.countries || [],
       average_savings: dto.average_savings,
       total_coupons: dto.total_coupons,
       active_coupons: dto.active_coupons,
@@ -39,8 +40,12 @@ export class StoreMapper {
       dto.category = domain.category.id
     }
 
-    if (domain.cashback) {
-      dto.cashback = domain.cashback
+    if (domain.description !== undefined) {
+      dto.description = domain.description
+    }
+
+    if (domain.countries !== undefined) {
+      dto.countries = domain.countries
     }
 
     return dto

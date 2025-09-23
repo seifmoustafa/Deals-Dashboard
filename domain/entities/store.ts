@@ -11,11 +11,9 @@ export interface Store {
     title: string
     slug: string
     id: string
-  }
-  cashback: {
-    rate: number
-    terms: string[]
-  }
+  } | null
+  description: string
+  countries: string[]
   average_savings: number
   total_coupons: number
   active_coupons: number
@@ -44,9 +42,8 @@ export interface StoreCreateRequest {
   image: { url: string }
   store_url: string
   category: string
-  cashback: {
-    rate: number
-  }
+  description: string
+  countries: string[]
 }
 
 export interface StoreUpdateRequest {
@@ -54,9 +51,8 @@ export interface StoreUpdateRequest {
   image?: { url: string }
   store_url?: string
   category?: string
-  cashback?: {
-    rate: number
-  }
+  description?: string
+  countries?: string[]
 }
 
 export interface BulkActionResponse {
