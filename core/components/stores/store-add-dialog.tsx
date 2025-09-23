@@ -1,91 +1,120 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Loader, ImageIcon, Check, ChevronsUpDown, X } from "lucide-react"
-import { getCountryOptions } from "@/core/utils/countries"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Loader, ImageIcon, Check, ChevronsUpDown, X } from "lucide-react";
+import { getCountryOptions } from "@/core/utils/countries";
+import { cn } from "@/lib/utils";
 
 interface StoreAddDialogProps {
-  open: boolean
-  onClose: () => void
-  onSave: (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => void
-  isLoading: boolean
-  categoryId: string
+  open: boolean;
+  onClose: () => void;
+  onSave: (
+    title: string,
+    imageUrl: string,
+    storeUrl: string,
+    description: string,
+    countries: string[]
+  ) => void;
+  isLoading: boolean;
+  categoryId: string;
 }
 
-export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }: StoreAddDialogProps) {
-  const [title, setTitle] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
-  const [storeUrl, setStoreUrl] = useState("")
-  const [description, setDescription] = useState("")
-  const [countries, setCountries] = useState<string[]>([])
-  const [isUploading, setIsUploading] = useState(false)
-  const [openCountrySelect, setOpenCountrySelect] = useState(false)
-  const [countrySearchValue, setCountrySearchValue] = useState("")
+export function StoreAddDialog({
+  open,
+  onClose,
+  onSave,
+  isLoading,
+  categoryId,
+}: StoreAddDialogProps) {
+  const [title, setTitle] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [storeUrl, setStoreUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [countries, setCountries] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [openCountrySelect, setOpenCountrySelect] = useState(false);
+  const [countrySearchValue, setCountrySearchValue] = useState("");
 
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       // Clear form when dialog closes
-      setTitle("")
-      setImageUrl("")
-      setStoreUrl("")
-      setDescription("")
-      setCountries([])
-      setCountrySearchValue("")
-      setOpenCountrySelect(false)
+      setTitle("");
+      setImageUrl("");
+      setStoreUrl("");
+      setDescription("");
+      setCountries([]);
+      setCountrySearchValue("");
+      setOpenCountrySelect(false);
     }
-  }, [open])
+  }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSave(title, imageUrl, storeUrl, description, countries)
-  }
+    e.preventDefault();
+    onSave(title, imageUrl, storeUrl, description, countries);
+  };
 
   const handleClose = () => {
     if (!isLoading) {
-      onClose()
+      onClose();
     }
-  }
+  };
 
   const handleCountrySelect = (country: string) => {
     if (!countries.includes(country)) {
-      setCountries([...countries, country])
+      setCountries([...countries, country]);
     }
-    setCountrySearchValue("")
-    setOpenCountrySelect(false)
-  }
+    setCountrySearchValue("");
+    setOpenCountrySelect(false);
+  };
 
   const handleCountryRemove = (countryToRemove: string) => {
-    setCountries(countries.filter(country => country !== countryToRemove))
-  }
+    setCountries(countries.filter((country) => country !== countryToRemove));
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // In a real app, you would upload to a server/cloud storage
     // For now, we'll use a placeholder or mock URL
-    setIsUploading(true)
+    setIsUploading(true);
 
     // Simulate upload delay
     setTimeout(() => {
       // For demo, just use a placeholder image URL
       setImageUrl(
-        "https://res.cloudinary.com/dnzqyojor/image/upload/v1742643226/b11fd3d73677e87ff981977ac7a777bf_dnqphm.png",
-      )
-      setIsUploading(false)
-    }, 1000)
-  }
+        "https://res.cloudinary.com/dnzqyojor/image/upload/v1742643226/b11fd3d73677e87ff981977ac7a777bf_dnqphm.png"
+      );
+      setIsUploading(false);
+    }, 1000);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -127,7 +156,9 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
                     ) : (
                       <>
                         <ImageIcon className="h-8 w-8 text-gray-400" />
-                        <span className="mt-2 text-sm text-gray-500">Upload image</span>
+                        <span className="mt-2 text-sm text-gray-500">
+                          Upload image
+                        </span>
                       </>
                     )}
                   </>
@@ -169,7 +200,10 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
             </div>
             <div className="grid gap-2">
               <Label htmlFor="countries">Countries</Label>
-              <Popover open={openCountrySelect} onOpenChange={setOpenCountrySelect}>
+              <Popover
+                open={openCountrySelect}
+                onOpenChange={setOpenCountrySelect}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -178,7 +212,9 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
                     className="w-full justify-between h-10 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
                     disabled={isLoading}
                   >
-                    {countries.length > 0 ? `${countries.length} countries selected` : "Select countries..."}
+                    {countries.length > 0
+                      ? `${countries.length} countries selected`
+                      : "Select countries..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -191,27 +227,33 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
                       className="mb-2"
                     />
                     <div className="max-h-60 overflow-y-auto">
-                      {getCountryOptions()
-                        .filter((country) =>
-                          country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
-                        )
-                        .length === 0 ? (
-                        <div className="p-2 text-sm text-gray-500">No country found.</div>
+                      {getCountryOptions().filter((country) =>
+                        country.label
+                          .toLowerCase()
+                          .includes(countrySearchValue.toLowerCase())
+                      ).length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">
+                          No country found.
+                        </div>
                       ) : (
                         getCountryOptions()
                           .filter((country) =>
-                            country.label.toLowerCase().includes(countrySearchValue.toLowerCase())
+                            country.label
+                              .toLowerCase()
+                              .includes(countrySearchValue.toLowerCase())
                           )
                           .map((country) => {
-                            const isSelected = countries.includes(country.value)
+                            const isSelected = countries.includes(
+                              country.value
+                            );
                             return (
                               <div
                                 key={country.value}
                                 onClick={() => {
                                   if (isSelected) {
-                                    handleCountryRemove(country.value)
+                                    handleCountryRemove(country.value);
                                   } else {
-                                    handleCountrySelect(country.value)
+                                    handleCountrySelect(country.value);
                                   }
                                 }}
                                 className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded-sm"
@@ -224,7 +266,7 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
                                 />
                                 {country.label}
                               </div>
-                            )
+                            );
                           })
                       )}
                     </div>
@@ -254,7 +296,12 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button
@@ -275,5 +322,5 @@ export function StoreAddDialog({ open, onClose, onSave, isLoading, categoryId }:
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
