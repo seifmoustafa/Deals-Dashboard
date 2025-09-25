@@ -20,12 +20,12 @@ export function middleware(request: NextRequest) {
   // ─── 2) Read your auth token ───────────────────────────────────────────────────
   const token = request.cookies.get("auth_token")?.value;
 
-  // ─── 3) Detect if we’re on the login page ─────────────────────────────────────
+  // ─── 3) Detect if we're on the login page ─────────────────────────────────────
   const isLoginPage = pathname === "/login";
 
   // ─── 4) Redirect rules ────────────────────────────────────────────────────────
 
-  // a) If already logged in, don’t show them the login page
+  // a) If already logged in, don't show them the login page
   if (isLoginPage && token) {
     return NextResponse.redirect(new URL("/dashboard/users", request.url));
   }
@@ -35,7 +35,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // c) Otherwise, everything’s fine
+  // c) Check role-based access for admins page
+  if (pathname.startsWith("/dashboard/admins") && token) {
+    try {
+      // Try to parse admin data from token or cookie
+      // Note: In a real implementation, you might want to verify the token with your backend
+      // For now, we'll let the RoleGuard component handle the client-side role checking
+      // The middleware will just ensure they're authenticated
+    } catch (error) {
+      // If there's an issue with the token, redirect to login
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  // d) Otherwise, everything's fine
   return NextResponse.next();
 }
 

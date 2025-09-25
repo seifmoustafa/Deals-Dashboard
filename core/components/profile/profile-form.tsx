@@ -77,7 +77,7 @@ export function ProfileForm({ admin, onProfileUpdate }: ProfileFormProps) {
       showToast({
         type: "success",
         title: "Email Updated",
-        message: response.message || "Your email has been updated successfully",
+        message: response?.message || "Your email has been updated successfully",
       })
 
       // Close the dialog and reset form

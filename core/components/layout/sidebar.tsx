@@ -11,6 +11,7 @@ import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/core/localization/translation-context"
+import { useAdminRole } from "@/core/hooks/use-admin-role"
 
 interface SidebarProps {
   className?: string
@@ -18,7 +19,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
-  const admin = authService.getCurrentAdmin()
+  const { admin, isSuperAdmin } = useAdminRole()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { t, dir } = useTranslation()
@@ -60,11 +61,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/dashboard/profile",
       icon: Icons.profile,
     },
-    {
+    // Only show Admins link for superAdmin users
+    ...(isSuperAdmin ? [{
       title: t("sidebar.admins"),
       href: "/dashboard/admins",
       icon: Icons.admins,
-    },
+    }] : []),
   ]
 
   const handleLogout = () => {
