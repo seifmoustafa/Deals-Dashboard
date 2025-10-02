@@ -49,6 +49,10 @@ export class StoreService {
     return this.storeRepository.updateStore(id, store)
   }
 
+  async uploadStoreImage(storeId: string, imageFile: File): Promise<Store> {
+    return this.storeRepository.uploadStoreImage(storeId, imageFile)
+  }
+
   async deleteStore(id: string): Promise<{ message: string }> {
     return this.storeRepository.deleteStore(id)
   }

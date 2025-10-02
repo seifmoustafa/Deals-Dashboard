@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { StoresTable } from "@/core/components/stores/stores-table"
 import { StoreAddDialog } from "@/core/components/stores/store-add-dialog"
-import { categoryService, storeService } from "@/infrastructure/di/container"
+import { storeService } from "@/infrastructure/di/container"
 import { showToast } from "@/core/components/ui/animated-toast"
 import { PlusIcon } from "lucide-react"
 import Link from "next/link"
@@ -13,35 +13,51 @@ import { ChevronRight } from "lucide-react"
 
 export default function CategoryStoresPage() {
   const params = useParams()
-  const slug = params?.slug as string
+  const categoryId = params?.id as string
 
-  const [category, setCategory] = useState<any>(null)
+  const [category, setCategory] = useState<{ id: string; title: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isAddingStore, setIsAddingStore] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
-    const fetchCategory = async () => {
+    const fetchCategoryFromStores = async () => {
       try {
         setIsLoading(true)
-        const categories = await categoryService.getCategories({})
-        const foundCategory = categories.data.find((cat: any) => cat.slug === slug || cat.id === slug)
+        // Fetch stores for this category to get the category info
+        const storesResponse = await storeService.getStoresByCategoryId(categoryId, {
+          page: 1,
+          limit: 1, // We only need one store to get the category info
+        })
 
-        if (foundCategory) {
-          console.log(`✅ Found category:`, foundCategory)
-          console.log(`✅ Category ID: ${foundCategory.id}`)
-          setCategory(foundCategory)
+        if (storesResponse.data.length > 0) {
+          const firstStore = storesResponse.data[0]
+          if (firstStore.category) {
+            const categoryInfo = {
+              id: firstStore.category._id,
+              title: firstStore.category.title,
+            }
+            console.log(`✅ Found category from stores:`, categoryInfo)
+            setCategory(categoryInfo)
+          } else {
+            console.log(`❌ Store has no category information`)
+            showToast({
+              type: "error",
+              title: "Error",
+              message: "Category information not found",
+            })
+          }
         } else {
-          console.log(`❌ Category not found for slug: ${slug}`)
+          console.log(`❌ No stores found for category ID: ${categoryId}`)
           showToast({
             type: "error",
             title: "Error",
-            message: "Category not found",
+            message: "Category not found or has no stores",
           })
         }
       } catch (error) {
-        console.error("Failed to fetch category:", error)
+        console.error("Failed to fetch category from stores:", error)
         showToast({
           type: "error",
           title: "Error",
@@ -52,25 +68,39 @@ export default function CategoryStoresPage() {
       }
     }
 
-    if (slug) {
-      fetchCategory()
+    if (categoryId) {
+      fetchCategoryFromStores()
     }
-  }, [slug])
+  }, [categoryId])
 
-  const handleAddStore = async (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => {
+  const handleAddStore = async (title: string, imageFile: File | null, storeUrl: string, description: string, countries: string[]) => {
     if (!category) return
 
     try {
       setIsAddingStore(true)
 
-      await storeService.createStore({
+      // Step 1: Create store without image
+      const createdStore = await storeService.createStore({
         title,
-        image: { url: imageUrl },
         store_url: storeUrl,
         category: category.id,
         description,
         countries,
       })
+
+      // Step 2: Upload image if provided
+      if (imageFile) {
+        try {
+          await storeService.uploadStoreImage(createdStore.id, imageFile)
+        } catch (uploadError) {
+          console.error("Failed to upload image:", uploadError)
+          showToast({
+            type: "warning",
+            title: "Store created",
+            message: "Store was created but image upload failed. You can update the image later.",
+          })
+        }
+      }
 
       showToast({
         type: "success",
@@ -111,7 +141,6 @@ export default function CategoryStoresPage() {
       </div>
 
       {/* Stores Table */}
-      {console.log(`🔍 Passing to StoresTable - categoryId: ${category?.id}, categoryTitle: ${category?.title}`)}
       {category ? (
         <StoresTable categoryId={category.id} categoryTitle={category.title} refreshTrigger={refreshTrigger} />
       ) : (
@@ -134,3 +163,4 @@ export default function CategoryStoresPage() {
     </div>
   )
 }
+

@@ -126,26 +126,97 @@ export function StoresTable({ categoryId, categoryTitle, refreshTrigger = 0 }: S
   }
 
   // Individual store actions
-  const handleEditStoreSave = async (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => {
+  const handleEditStoreSave = async (title: string, imageFile: File | null, storeUrl: string, description: string, countries: string[]) => {
     if (!storeToEdit) return
 
     try {
       setIsEditing(true)
+      
+      // Step 1: Update store without image
       const updatedStore = await storeService.updateStore(storeToEdit.id, {
         title,
-        image: { url: imageUrl },
         store_url: storeUrl,
         description,
         countries,
       })
 
-      setStores((prevStores) => prevStores.map((store) => (store.id === storeToEdit.id ? updatedStore : store)))
+      console.log("🔍 Updated store response:", updatedStore)
+
+      // Step 2: Upload new image if provided
+      if (imageFile) {
+        try {
+          const storeWithNewImage = await storeService.uploadStoreImage(updatedStore.id, imageFile)
+          console.log("🔍 Store with new image:", storeWithNewImage)
+          setStores((prevStores) => prevStores.map((store) => (store.id === storeToEdit.id ? storeWithNewImage : store)))
+        } catch (uploadError) {
+          console.error("Failed to upload image:", uploadError)
+          // Still update the store data even if image upload fails
+          setStores((prevStores) => prevStores.map((store) => (store.id === storeToEdit.id ? updatedStore : store)))
+          showToast({
+            type: "warning",
+            title: "Store updated",
+            message: "Store was updated but image upload failed. You can try updating the image again.",
+          })
+        }
+      } else {
+        setStores((prevStores) => prevStores.map((store) => (store.id === storeToEdit.id ? updatedStore : store)))
+      }
 
       showToast({
         type: "success",
         title: "Success",
         message: "Store updated successfully",
       })
+
+      // Refresh the stores list to ensure we have the latest data
+      const fetchStores = async () => {
+        try {
+          setIsLoading(true)
+          let response: StoresResponse
+
+          console.log(`🔍 StoresTable - categoryId: ${categoryId}`)
+          console.log(`🔍 StoresTable - categoryId type: ${typeof categoryId}`)
+          console.log(`🔍 StoresTable - categoryId truthy: ${!!categoryId}`)
+
+          // Always use getStoresByCategoryId when categoryId is provided
+          if (categoryId) {
+            const requestParams = {
+              ...params,
+              search: debouncedSearchTerm || undefined,
+            }
+            console.log(`🔍 Fetching stores for category ID: ${categoryId}`)
+            console.log(`📋 Request params:`, requestParams)
+            console.log(`🌐 Expected URL: /stores/stores-bycategoryId/${categoryId}?page=${requestParams.page}&limit=${requestParams.limit}&sortField=${requestParams.sortField}&sortOrder=${requestParams.sortOrder}`)
+            
+            response = await storeService.getStoresByCategoryId(categoryId, requestParams)
+          } else {
+            console.log("📋 Fetching all stores (no category filter) with params:", {
+              ...params,
+              search: debouncedSearchTerm || undefined,
+            })
+            response = await storeService.getStores({
+              ...params,
+              search: debouncedSearchTerm || undefined,
+            })
+          }
+
+          console.log(`Fetched ${response.data.length} stores`)
+          setStores(response.data)
+          setPagination(response.pagination)
+        } catch (error) {
+          console.error("Failed to fetch stores:", error)
+          showToast({
+            type: "error",
+            title: "Error",
+            message: "Failed to fetch stores. Please try again.",
+          })
+        } finally {
+          setIsLoading(false)
+        }
+      }
+
+      // Refresh the stores list
+      await fetchStores()
     } catch (error) {
       console.error("Failed to update store:", error)
       showToast({

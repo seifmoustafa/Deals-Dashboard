@@ -509,7 +509,7 @@ export function CategoriesTable({ refreshTrigger }: CategoriesTableProps) {
                     </TableCell>
                     <TableCell>
                       <button
-                        onClick={() => router.push(`/dashboard/categories/${category.slug}/stores`)}
+                        onClick={() => router.push(`/dashboard/categories/${category.id}/stores`)}
                         className="text-primary hover:text-primary/80 text-left font-medium hover:underline"
                       >
                         {category.title}

@@ -36,7 +36,7 @@ interface StoreAddDialogProps {
   onClose: () => void;
   onSave: (
     title: string,
-    imageUrl: string,
+    imageFile: File | null,
     storeUrl: string,
     description: string,
     countries: string[]
@@ -53,11 +53,11 @@ export function StoreAddDialog({
   categoryId,
 }: StoreAddDialogProps) {
   const [title, setTitle] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [storeUrl, setStoreUrl] = useState("");
   const [description, setDescription] = useState("");
   const [countries, setCountries] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [openCountrySelect, setOpenCountrySelect] = useState(false);
   const [countrySearchValue, setCountrySearchValue] = useState("");
 
@@ -66,7 +66,8 @@ export function StoreAddDialog({
     if (!open) {
       // Clear form when dialog closes
       setTitle("");
-      setImageUrl("");
+      setImageFile(null);
+      setImagePreview("");
       setStoreUrl("");
       setDescription("");
       setCountries([]);
@@ -77,7 +78,7 @@ export function StoreAddDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(title, imageUrl, storeUrl, description, countries);
+    onSave(title, imageFile, storeUrl, description, countries);
   };
 
   const handleClose = () => {
@@ -102,18 +103,19 @@ export function StoreAddDialog({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // In a real app, you would upload to a server/cloud storage
-    // For now, we'll use a placeholder or mock URL
-    setIsUploading(true);
+    setImageFile(file);
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
 
-    // Simulate upload delay
-    setTimeout(() => {
-      // For demo, just use a placeholder image URL
-      setImageUrl(
-        "https://res.cloudinary.com/dnzqyojor/image/upload/v1742643226/b11fd3d73677e87ff981977ac7a777bf_dnqphm.png"
-      );
-      setIsUploading(false);
-    }, 1000);
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview("");
   };
 
   return (
@@ -126,16 +128,16 @@ export function StoreAddDialog({
           <div className="grid gap-6 py-4">
             <div className="flex justify-center">
               <div className="relative flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg">
-                {imageUrl ? (
+                {imagePreview ? (
                   <div className="relative w-full h-full">
                     <img
-                      src={imageUrl || "/placeholder.svg"}
-                      alt="Store"
+                      src={imagePreview}
+                      alt="Store preview"
                       className="w-full h-full object-cover rounded-lg"
                     />
                     <button
                       type="button"
-                      onClick={() => setImageUrl("")}
+                      onClick={handleRemoveImage}
                       className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm"
                       disabled={isLoading}
                     >
@@ -149,18 +151,12 @@ export function StoreAddDialog({
                       accept="image/*"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={handleImageUpload}
-                      disabled={isLoading || isUploading}
+                      disabled={isLoading}
                     />
-                    {isUploading ? (
-                      <Loader className="h-8 w-8 text-gray-400 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="h-8 w-8 text-gray-400" />
-                        <span className="mt-2 text-sm text-gray-500">
-                          Upload image
-                        </span>
-                      </>
-                    )}
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                    <span className="mt-2 text-sm text-gray-500">
+                      Upload image
+                    </span>
                   </>
                 )}
               </div>
@@ -306,7 +302,7 @@ export function StoreAddDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !title.trim() || !imageUrl}
+              disabled={isLoading || !title.trim()}
               className="bg-green-600 hover:bg-green-700"
             >
               {isLoading ? (

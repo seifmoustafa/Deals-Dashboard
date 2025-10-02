@@ -51,6 +51,12 @@ export class StoreRepositoryImpl implements StoreRepository {
     return this.apiClient.patch<Store>(`/stores/${id}`, store)
   }
 
+  async uploadStoreImage(storeId: string, imageFile: File): Promise<Store> {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+    return this.apiClient.post<Store>(`/stores/${storeId}/upload-image`, formData)
+  }
+
   async deleteStore(id: string): Promise<{ message: string }> {
     return this.apiClient.delete<{ message: string }>(`/stores/${id}`)
   }

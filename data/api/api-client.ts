@@ -11,9 +11,12 @@ export class ApiClient {
     this.tokenStorage = new TokenStorage()
   }
 
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
+  private getHeaders(isFormData: boolean = false): HeadersInit {
+    const headers: HeadersInit = {}
+
+    // Only set Content-Type for non-FormData requests
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json"
     }
 
     const token = this.tokenStorage.getToken()
@@ -79,7 +82,7 @@ export class ApiClient {
           responseData,
         })
 
-        throw new Error(responseData.message || `HTTP error ${response.status}: ${response.statusText}`)
+        throw new Error((responseData as any).message || `HTTP error ${response.status}: ${response.statusText}`)
       }
 
       console.log(`[API] GET Response Data:`, responseData)
@@ -96,13 +99,14 @@ export class ApiClient {
     console.log(`[API] POST Request Body:`, data)
 
     try {
-      const headers = this.getHeaders()
+      const isFormData = data instanceof FormData
+      const headers = this.getHeaders(isFormData)
       console.log(`[API] POST Request Headers:`, headers)
 
       const response = await fetch(url, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify(data),
+        body: isFormData ? data : JSON.stringify(data),
       })
 
       console.log(`[API] POST Response Status: ${response.status}`)
@@ -132,7 +136,7 @@ export class ApiClient {
           responseData,
         })
 
-        throw new Error(responseData.message || `HTTP error ${response.status}: ${response.statusText}`)
+        throw new Error((responseData as any).message || `HTTP error ${response.status}: ${response.statusText}`)
       }
 
       console.log(`[API] POST Response Data:`, responseData)
@@ -149,13 +153,14 @@ export class ApiClient {
     console.log(`[API] PUT Request Body:`, data)
 
     try {
-      const headers = this.getHeaders()
+      const isFormData = data instanceof FormData
+      const headers = this.getHeaders(isFormData)
       console.log(`[API] PUT Request Headers:`, headers)
 
       const response = await fetch(url, {
         method: "PUT",
         headers: headers,
-        body: JSON.stringify(data),
+        body: isFormData ? data : JSON.stringify(data),
       })
 
       console.log(`[API] PUT Response Status: ${response.status}`)
@@ -185,7 +190,7 @@ export class ApiClient {
           responseData,
         })
 
-        throw new Error(responseData.message || `HTTP error ${response.status}: ${response.statusText}`)
+        throw new Error((responseData as any).message || `HTTP error ${response.status}: ${response.statusText}`)
       }
 
       console.log(`[API] PUT Response Data:`, responseData)
@@ -202,13 +207,14 @@ export class ApiClient {
     console.log(`[API] PATCH Request Body:`, data)
 
     try {
-      const headers = this.getHeaders()
+      const isFormData = data instanceof FormData
+      const headers = this.getHeaders(isFormData)
       console.log(`[API] PATCH Request Headers:`, headers)
 
       const response = await fetch(url, {
         method: "PATCH",
         headers: headers,
-        body: JSON.stringify(data),
+        body: isFormData ? data : JSON.stringify(data),
       })
 
       console.log(`[API] PATCH Response Status: ${response.status}`)
@@ -238,7 +244,7 @@ export class ApiClient {
           responseData,
         })
 
-        throw new Error(responseData.message || `HTTP error ${response.status}: ${response.statusText}`)
+        throw new Error((responseData as any).message || `HTTP error ${response.status}: ${response.statusText}`)
       }
 
       console.log(`[API] PATCH Response Data:`, responseData)
@@ -299,7 +305,7 @@ export class ApiClient {
           responseData,
         })
 
-        throw new Error(responseData.message || `HTTP error ${response.status}: ${response.statusText}`)
+        throw new Error((responseData as any).message || `HTTP error ${response.status}: ${response.statusText}`)
       }
 
       console.log(`[API] DELETE Response Data:`, responseData)

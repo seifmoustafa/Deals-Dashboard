@@ -32,6 +32,8 @@ export interface StoreRepository {
 
   updateStore(id: string, store: StoreUpdateRequest): Promise<Store>
 
+  uploadStoreImage(storeId: string, imageFile: File): Promise<Store>
+
   deleteStore(id: string): Promise<{ message: string }>
 
   activateStore(id: string): Promise<{ message: string }>

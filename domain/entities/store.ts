@@ -39,7 +39,6 @@ export interface StoresResponse {
 
 export interface StoreCreateRequest {
   title: string
-  image: { url: string }
   store_url: string
   category: string
   description: string
@@ -48,7 +47,6 @@ export interface StoreCreateRequest {
 
 export interface StoreUpdateRequest {
   title?: string
-  image?: { url: string }
   store_url?: string
   category?: string
   description?: string

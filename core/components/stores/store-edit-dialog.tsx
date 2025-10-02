@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 interface StoreEditDialogProps {
   open: boolean
   onClose: () => void
-  onSave: (title: string, imageUrl: string, storeUrl: string, description: string, countries: string[]) => void
+  onSave: (title: string, imageFile: File | null, storeUrl: string, description: string, countries: string[]) => void
   initialTitle: string
   initialImageUrl: string
   initialStoreUrl: string
@@ -39,18 +39,19 @@ export function StoreEditDialog({
   isLoading,
 }: StoreEditDialogProps) {
   const [title, setTitle] = useState(initialTitle)
-  const [imageUrl, setImageUrl] = useState(initialImageUrl)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>(initialImageUrl)
   const [storeUrl, setStoreUrl] = useState(initialStoreUrl)
   const [description, setDescription] = useState(initialDescription)
   const [countries, setCountries] = useState<string[]>(initialCountries)
-  const [isUploading, setIsUploading] = useState(false)
   const [openCountrySelect, setOpenCountrySelect] = useState(false)
   const [countrySearchValue, setCountrySearchValue] = useState("")
 
   useEffect(() => {
     if (open) {
       setTitle(initialTitle || "")
-      setImageUrl(initialImageUrl || "")
+      setImageFile(null)
+      setImagePreview(initialImageUrl || "")
       setStoreUrl(initialStoreUrl || "")
       setDescription(initialDescription || "")
       setCountries(initialCountries || [])
@@ -61,7 +62,7 @@ export function StoreEditDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(title, imageUrl, storeUrl, description, countries)
+    onSave(title, imageFile, storeUrl, description, countries)
   }
 
   const handleCountrySelect = (country: string) => {
@@ -80,18 +81,19 @@ export function StoreEditDialog({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // In a real app, you would upload to a server/cloud storage
-    // For now, we'll use a placeholder or mock URL
-    setIsUploading(true)
+    setImageFile(file)
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file)
+    setImagePreview(previewUrl)
+  }
 
-    // Simulate upload delay
-    setTimeout(() => {
-      // For demo, just use a placeholder image URL
-      setImageUrl(
-        "https://res.cloudinary.com/dnzqyojor/image/upload/v1742643226/b11fd3d73677e87ff981977ac7a777bf_dnqphm.png",
-      )
-      setIsUploading(false)
-    }, 1000)
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    if (imagePreview && imagePreview !== initialImageUrl) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImagePreview("")
   }
 
   return (
@@ -129,16 +131,16 @@ export function StoreEditDialog({
 
             <div className="flex justify-center">
               <div className="relative flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg">
-                {imageUrl ? (
+                {imagePreview ? (
                   <div className="relative w-full h-full">
                     <img
-                      src={imageUrl || "/placeholder.svg"}
-                      alt="Store"
+                      src={imagePreview}
+                      alt="Store preview"
                       className="w-full h-full object-cover rounded-lg"
                     />
                     <button
                       type="button"
-                      onClick={() => setImageUrl("")}
+                      onClick={handleRemoveImage}
                       className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm"
                       disabled={isLoading}
                     >
@@ -152,16 +154,10 @@ export function StoreEditDialog({
                       accept="image/*"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={handleImageUpload}
-                      disabled={isLoading || isUploading}
+                      disabled={isLoading}
                     />
-                    {isUploading ? (
-                      <Loader className="h-8 w-8 text-gray-400 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="h-8 w-8 text-gray-400" />
-                        <span className="mt-2 text-sm text-gray-500">Click to upload a photo</span>
-                      </>
-                    )}
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                    <span className="mt-2 text-sm text-gray-500">Click to upload a photo</span>
                   </>
                 )}
               </div>
@@ -269,7 +265,7 @@ export function StoreEditDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !title.trim() || !imageUrl}
+              disabled={isLoading || !title.trim()}
               className="bg-green-600 hover:bg-green-700"
             >
               {isLoading ? (
