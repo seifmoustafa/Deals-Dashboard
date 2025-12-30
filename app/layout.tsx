@@ -11,7 +11,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 export const metadata: Metadata = {
   title: "Deals Admin Dashboard",
   description: "E-commerce admin dashboard with clean architecture",
-    generator: 'v0.dev'
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export default function RootLayout({

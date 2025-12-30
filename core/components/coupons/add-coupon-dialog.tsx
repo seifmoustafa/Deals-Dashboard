@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
@@ -27,6 +28,7 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
   const [formData, setFormData] = useState({
     code: "",
     title: "",
+    description: "",
     discount_type: "" as DiscountType,
     discount: 0,
     cashback: 0,
@@ -47,6 +49,7 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
       code: formData.code,
       store: storeId,
       title: formData.title,
+      description: formData.description || undefined,
       discount_type: formData.discount_type,
       country: formData.country,
       expiry_date: format(formData.expiry_date, "M/d/yyyy"),
@@ -66,6 +69,7 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
     setFormData({
       code: "",
       title: "",
+      description: "",
       discount_type: "" as DiscountType,
       discount: 0,
       cashback: 0,
@@ -80,6 +84,7 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
     setFormData({
       code: "",
       title: "",
+      description: "",
       discount_type: "" as DiscountType,
       discount: 0,
       cashback: 0,
@@ -121,6 +126,16 @@ export function AddCouponDialog({ open, onClose, onSave, storeId, isLoading = fa
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Enter coupon title"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Enter coupon description"
+              rows={3}
             />
           </div>
 

@@ -87,9 +87,9 @@ export function CouponCard({ coupon, storeName, categoryName, onEdit, onDelete }
 
             <div className="flex justify-between items-start">
               <span className="text-sm text-gray-600">Description :</span>
-              {/* <span className="text-sm text-right max-w-[70%]">
-                Offer might end before the specialized date and applied only if you purchase above 600$
-              </span> */}
+              <span className="text-sm text-right max-w-[70%]">
+                {coupon.description || ""}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">

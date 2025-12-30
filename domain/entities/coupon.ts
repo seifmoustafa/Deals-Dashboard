@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from "./pagination"
+import type { PaginatedResult } from "./pagination"
 
 export enum DiscountType {
   DISCOUNT = "DISCOUNT",
@@ -10,6 +10,7 @@ export interface Coupon {
   _id: string
   code: string
   title: string
+  description?: string
   discount_type: DiscountType
   discount: number
   cashback: number
@@ -43,6 +44,7 @@ export interface CreateCouponDto {
   code: string
   store: string
   title: string
+  description?: string
   discount_type: DiscountType
   discount?: number
   cashback?: number
@@ -50,9 +52,9 @@ export interface CreateCouponDto {
   expiry_date: string
 }
 
-export interface UpdateCouponDto extends Partial<CreateCouponDto> {}
+export interface UpdateCouponDto extends Partial<CreateCouponDto> { }
 
-export type CouponsResponse = PaginatedResponse<Coupon>
+export type CouponsResponse = PaginatedResult<Coupon>
 
 export interface CouponsPaginationParams {
   page?: number

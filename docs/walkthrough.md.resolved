@@ -357,7 +357,7 @@ export const filterUseCases = new FilterUseCases()
 
 ```typescript
 // Protected routes
-matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+matcher: ["/((?!_next/static|_next/image|logo.png).*)"]
 
 // Rules:
 // 1. Public assets whitelisted

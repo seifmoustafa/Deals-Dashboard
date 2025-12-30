@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next/") || // Next.js build files
     pathname.startsWith("/api/") || // API routes
-    pathname === "/favicon.ico" || // Favicon
+    pathname === "/logo.png" || // Favicon
     PUBLIC_FILE.test(pathname) // Any file in /public (e.g. /login.svg, /logo.svg)
   ) {
     return NextResponse.next();
@@ -54,5 +54,5 @@ export function middleware(request: NextRequest) {
 
 // Apply this middleware to all routes except Next’s static/image handlers and favicon
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|logo.png).*)"],
 };
