@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { StoresTable } from "@/core/components/stores/stores-table"
 import { StoreAddDialog } from "@/core/components/stores/store-add-dialog"
-import { storeService } from "@/infrastructure/di/container"
+import { categoryService, storeService } from "@/infrastructure/di/container"
 import { showToast } from "@/core/components/ui/animated-toast"
 import { PlusIcon } from "lucide-react"
 import Link from "next/link"
@@ -22,46 +22,24 @@ export default function CategoryStoresPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
-    const fetchCategoryFromStores = async () => {
+    const fetchCategory = async () => {
       try {
         setIsLoading(true)
-        // Fetch stores for this category to get the category info
-        const storesResponse = await storeService.getStoresByCategoryId(categoryId, {
-          page: 1,
-          limit: 1, // We only need one store to get the category info
-        })
+        // Fetch category directly by ID - this works even if category has no stores
+        const categoryData = await categoryService.getCategoryById(categoryId)
 
-        if (storesResponse.data.length > 0) {
-          const firstStore = storesResponse.data[0]
-          if (firstStore.category) {
-            const categoryInfo = {
-              id: firstStore.category._id,
-              title: firstStore.category.title,
-            }
-            console.log(`✅ Found category from stores:`, categoryInfo)
-            setCategory(categoryInfo)
-          } else {
-            console.log(`❌ Store has no category information`)
-            showToast({
-              type: "error",
-              title: "Error",
-              message: "Category information not found",
-            })
-          }
-        } else {
-          console.log(`❌ No stores found for category ID: ${categoryId}`)
-          showToast({
-            type: "error",
-            title: "Error",
-            message: "Category not found or has no stores",
-          })
+        const categoryInfo = {
+          id: categoryData.id,
+          title: categoryData.title,
         }
+        console.log(`✅ Found category:`, categoryInfo)
+        setCategory(categoryInfo)
       } catch (error) {
-        console.error("Failed to fetch category from stores:", error)
+        console.error("Failed to fetch category:", error)
         showToast({
           type: "error",
           title: "Error",
-          message: "Failed to fetch category. Please try again.",
+          message: "Category not found. Please try again.",
         })
       } finally {
         setIsLoading(false)
@@ -69,7 +47,7 @@ export default function CategoryStoresPage() {
     }
 
     if (categoryId) {
-      fetchCategoryFromStores()
+      fetchCategory()
     }
   }, [categoryId])
 

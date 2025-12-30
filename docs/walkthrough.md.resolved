@@ -1,0 +1,384 @@
+# 🔍 Deals Dashboard - Comprehensive Analysis
+
+## Overview
+
+**Deals Dashboard** is a full-featured **Next.js 14 Admin Dashboard** for managing an e-commerce deals and cashback platform. It follows **Clean Architecture** principles with clear separation between domain, data, and presentation layers.
+
+---
+
+## 🏗️ Architecture Overview
+
+```mermaid
+graph TB
+    subgraph Presentation["Presentation Layer"]
+        Pages["Pages (app/)"]
+        CoreComp["Core Components"]
+        UIComp["UI Components (Radix)"]
+    end
+    
+    subgraph Domain["Domain Layer"]
+        Services["Services"]
+        Entities["Entities"]
+        Repos["Repository Interfaces"]
+        UseCases["Use Cases"]
+    end
+    
+    subgraph Data["Data Layer"]
+        RepoImpl["Repository Implementations"]
+        Mappers["Mappers"]
+        API["API Client"]
+    end
+    
+    subgraph Infrastructure["Infrastructure Layer"]
+        DI["DI Container"]
+        Storage["Storage (Token/Admin)"]
+        Config["Configuration"]
+    end
+    
+    Pages --> CoreComp
+    CoreComp --> Services
+    Services --> Repos
+    Repos -.->|Implemented by| RepoImpl
+    RepoImpl --> Mappers
+    RepoImpl --> API
+    DI --> Services
+    DI --> RepoImpl
+    API --> Storage
+```
+
+---
+
+## 📁 Project Structure
+
+| Directory | Purpose |
+|-----------|---------|
+| `app/` | Next.js App Router pages and layouts |
+| `components/` | Radix UI primitives with shadcn/ui styling |
+| `core/` | Business components, hooks, localization, utils |
+| `domain/` | Entities, services, repository interfaces |
+| `data/` | API client, mappers, repository implementations |
+| `infrastructure/` | DI container, storage, configuration |
+| `locales/` | i18n translations (EN/AR) |
+| `hooks/` | Shared React hooks |
+| `styles/` | Global CSS |
+
+---
+
+## 🎯 Core Entities
+
+### User Entity
+```typescript
+interface User {
+  id: string
+  fullName: string
+  email: string
+  phone?: string
+  dateOfBirth?: string | null
+  gender?: string | null
+  country?: string | null
+  city?: string | null
+  firebaseUid?: string
+  totalSavings?: number
+  isActive: boolean
+  deletedAt: string | null
+  profileImage?: { url: string } | null
+}
+```
+
+### Admin Entity
+```typescript
+interface Admin {
+  id: string
+  fullName: string
+  username: string
+  email: string
+  role: "super" | "regular"  // Role-based access
+  isActive: boolean
+}
+```
+
+### Category Entity
+```typescript
+interface Category {
+  id: string
+  title: string
+  colorCode: string
+  order: number
+  isFeatured: boolean
+  storeCount: number
+  activeCouponCount: number
+  averageSavings: number
+  isActive: boolean
+  slug: string
+}
+```
+
+### Store Entity
+```typescript
+interface Store {
+  id: string
+  title: string
+  image: { url: string }
+  store_url: string
+  category: { _id: string; title: string; slug: string } | null
+  description: string
+  countries: string[]
+  average_savings: number
+  total_coupons: number
+  active_coupons: number
+  is_featured: boolean
+  is_active: boolean
+  popularity_score: number
+}
+```
+
+### Coupon Entity
+```typescript
+interface Coupon {
+  _id: string
+  code: string
+  title: string
+  discount_type: "DISCOUNT" | "CASHBACK" | "DISCOUNT_AND_CASHBACK"
+  discount: number
+  cashback: number
+  country: string
+  expiry_date: string
+  usage_count: number
+  success_rate: number
+  is_verified: boolean
+  is_featured: boolean
+  is_active: boolean
+}
+```
+
+---
+
+## 🔌 API Client
+
+The API client ([data/api/api-client.ts](file:///e:/NextProjects/Deals-Dashboard/data/api/api-client.ts)) provides:
+- **HTTP Methods**: GET, POST, PUT, PATCH, DELETE
+- **Bearer Token Authentication**
+- **Automatic 401 Interception** → triggers auth modal
+- **FormData Support** for file uploads
+- **Comprehensive Logging**
+
+```typescript
+class ApiClient {
+  async get<T>(endpoint, queryParams?): Promise<T>
+  async post<T>(endpoint, data): Promise<T>
+  async put<T>(endpoint, data): Promise<T>
+  async patch<T>(endpoint, data): Promise<T>
+  async delete<T>(endpoint, data?): Promise<T>
+}
+```
+
+---
+
+## 🔐 Authentication System
+
+### Flow Diagram
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant LF as Login Form
+    participant AS as AuthService
+    participant AR as AuthRepository
+    participant API as API Client
+    participant TS as TokenStorage
+    participant MW as Middleware
+
+    U->>LF: Enter credentials
+    LF->>AS: login(credentials)
+    AS->>AR: login(credentials)
+    AR->>API: POST /admins/login
+    API-->>AR: { token, admin }
+    AR->>TS: setToken(token)
+    AR-->>LF: AuthResponse
+    LF->>U: Redirect to /dashboard/users
+    
+    Note over MW: Subsequent requests
+    MW->>TS: Check auth_token cookie
+    alt Valid Token
+        MW-->>U: Allow access
+    else No Token
+        MW-->>U: Redirect to /login
+    end
+```
+
+### Token Storage
+- **localStorage**: Stores `auth_token` for API requests
+- **Cookie**: `auth_token` cookie for middleware SSR auth
+- **Expiry**: 7 days
+
+### Role-Based Access
+- **Super Admin**: Full access including `/dashboard/admins`
+- **Regular Admin**: Limited access (no admin management)
+
+---
+
+## 🌐 Internationalization (i18n)
+
+### Supported Languages
+| Code | Language | Direction |
+|------|----------|-----------|
+| [en](file:///e:/NextProjects/Deals-Dashboard/infrastructure/storage/token-storage.ts#10-16) | English | LTR |
+| [ar](file:///e:/NextProjects/Deals-Dashboard/core/components/layout/sidebar.tsx#20-228) | Arabic | RTL |
+
+### Translation Context
+```typescript
+const { t, language, setLanguage, dir } = useTranslation()
+
+// Usage
+t("users.userManagement")  // "User Management" (EN)
+                           // "إدارة المستخدمين" (AR)
+```
+
+### Translation Coverage
+- Common actions (save, delete, edit, etc.)
+- Authentication UI
+- Sidebar navigation
+- All CRUD operations for Users, Categories, Stores
+- Profile management
+- Pagination & stats
+
+---
+
+## 📱 Feature Modules
+
+### 1. Users Management
+| Component | Size | Features |
+|-----------|------|----------|
+| [users-table.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/users/users-table.tsx) | 55KB | Full table with search, pagination, bulk actions |
+| [edit-user-form.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/users/edit-user-form.tsx) | 21KB | Complete user editing |
+| [add-user-form.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/users/add-user-form.tsx) | 16KB | User creation form |
+| [user-row-actions.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/users/user-row-actions.tsx) | 3KB | Action dropdown per row |
+
+**Operations**: Create, Read, Update, Delete, Activate, Deactivate, Bulk operations
+
+### 2. Categories Management
+| Component | Purpose |
+|-----------|---------|
+| [categories-table.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/categories/categories-table.tsx) | Main data table |
+| [add-category-form.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/categories/add-category-form.tsx) | Create category |
+| [edit-category-form.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/categories/edit-category-form.tsx) | Edit category |
+| [category-status-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/categories/category-status-dialog.tsx) | Activate/Deactivate |
+| [category-delete-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/categories/category-delete-dialog.tsx) | Delete confirmation |
+| [bulk-action-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/bulk-action-dialog.tsx) | Bulk operations |
+
+### 3. Stores Management
+| Component | Purpose |
+|-----------|---------|
+| [stores-table.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/stores-table.tsx) | Main data table |
+| [store-add-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/store-add-dialog.tsx) | Create with image upload |
+| [store-edit-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/store-edit-dialog.tsx) | Edit with image change |
+| [store-status-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/store-status-dialog.tsx) | Activate/Deactivate |
+| [store-delete-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/stores/store-delete-dialog.tsx) | Delete confirmation |
+
+### 4. Coupons/Cashback Management
+| Component | Purpose |
+|-----------|---------|
+| [coupon-card.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/coupons/coupon-card.tsx) | Card display component |
+| [add-coupon-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/coupons/add-coupon-dialog.tsx) | Create coupon |
+| [coupon-form-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/coupons/coupon-form-dialog.tsx) | Edit coupon |
+| [delete-coupon-dialog.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/coupons/delete-coupon-dialog.tsx) | Delete confirmation |
+
+---
+
+## 🎨 UI Component Library
+
+### Radix UI Primitives (53 components)
+Including: Accordion, Alert, Avatar, Badge, Button, Calendar, Card, Carousel, Chart, Checkbox, Dialog, Dropdown, Form, Input, Label, Popover, Progress, Select, Separator, Sheet, Sidebar, Slider, Switch, Table, Tabs, Toast, Toggle, Tooltip, and more.
+
+### Custom Core Components
+| Component | Purpose |
+|-----------|---------|
+| [animated-toast.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/ui/animated-toast.tsx) | Animated notifications |
+| [date-picker.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/ui/date-picker.tsx) | Date selection |
+| [image-upload.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/ui/image-upload.tsx) | File upload UI |
+| [deals-logo.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/ui/deals-logo.tsx) | Brand logo |
+| [custom-dropdown.tsx](file:///e:/NextProjects/Deals-Dashboard/core/components/ui/custom-dropdown.tsx) | Enhanced dropdown |
+
+---
+
+## 🛠️ Utility Modules
+
+| File | Purpose |
+|------|---------|
+| [countries.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/countries.ts) | Country list with codes |
+| [country-flags.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/country-flags.ts) | Flag icons mapping |
+| [export-utils.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/export-utils.ts) | Excel/CSV export functionality |
+| [phone-utils.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/phone-utils.ts) | Phone number formatting |
+| [rtl-utils.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/rtl-utils.ts) | RTL layout helpers |
+| [image-utils.ts](file:///e:/NextProjects/Deals-Dashboard/core/utils/image-utils.ts) | Image processing |
+
+---
+
+## 🔧 Dependency Injection
+
+The DI container ([infrastructure/di/container.ts](file:///e:/NextProjects/Deals-Dashboard/infrastructure/di/container.ts)) wires everything together:
+
+```typescript
+// Created instances
+const apiClient = new ApiClient()
+const tokenStorage = new TokenStorage()
+const adminStorage = new AdminStorage()
+
+// Exported services (singleton pattern)
+export const authService = new AuthService(authRepository)
+export const userService = new UserService(userRepository)
+export const categoryService = new CategoryService(categoryRepository)
+export const adminService = new AdminService(adminRepository)
+export const storeService = new StoreService(storeRepository)
+export const couponService = new CouponServiceImpl(couponRepository)
+export const exportService = new ExportServiceImpl()
+export const filterUseCases = new FilterUseCases()
+```
+
+---
+
+## 📊 Tech Stack Summary
+
+| Category | Technologies |
+|----------|--------------|
+| **Framework** | Next.js 14.2.16, React 18 |
+| **Language** | TypeScript 5 |
+| **Styling** | TailwindCSS 3.4, CSS Variables |
+| **UI Components** | Radix UI, shadcn/ui pattern |
+| **Forms** | React Hook Form, Zod validation |
+| **Charts** | Recharts |
+| **Date Handling** | date-fns, react-day-picker |
+| **State** | React Context (Translation, Theme) |
+| **Analytics** | Vercel Analytics, Speed Insights |
+| **Export** | xlsx library |
+
+---
+
+## 🔒 Middleware Protection
+
+```typescript
+// Protected routes
+matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+
+// Rules:
+// 1. Public assets whitelisted
+// 2. Logged-in users redirected from /login → /dashboard/users
+// 3. Unauthenticated users redirected to /login
+// 4. Role-based access for /dashboard/admins
+```
+
+---
+
+## 📈 Key Observations
+
+1. **Clean Architecture**: Proper separation of concerns with domain/data/infrastructure layers
+2. **Type Safety**: Comprehensive TypeScript interfaces for all entities
+3. **i18n Ready**: Full Arabic support with RTL layout handling
+4. **Responsive Design**: Mobile-first with hamburger menu
+5. **Bulk Operations**: All modules support multi-select actions
+6. **File Uploads**: Image upload support for stores with preview
+7. **Auth Security**: Token + Cookie dual storage for SSR/CSR compatibility
+8. **Role Management**: Super/Regular admin distinction with UI filtering
+
+---
+
+*Analysis completed on December 30, 2025*
